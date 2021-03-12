@@ -6,13 +6,21 @@ const bodyParser=require('body-parser')
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:false}))
 
-app.all('*', function(req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin','*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST'); 
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization'); 
-    res.setHeader("Content-Type", "application/json;charset=utf-8");
 
-    next();
+
+let allowORigin=[
+    "http://47.112.113.38",
+    "http://localhost:8080",
+]
+app.all('*', function(req, res, next) {
+    if (allowORigin.indexOf(req.headers.origin) >= 0){
+        res.header("Access-Control-Allow-Origin", req.headers.origin);
+        res.header('Access-Control-Allow-Methods', 'GET, POST'); 
+        res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization'); 
+        res.header("content-Type", "application/json;charset=utf-8");
+        res.header("Access-control-Allow-Credentials","true");
+    }
+    next();;
 })
 
 // 解密token
@@ -40,6 +48,7 @@ app.use((err,req,res,next)=>{
 // 小程序api
 app.use('/mpuser', require('./routers/xiaochengxu/mpuser'));
 app.use('/product', require('./routers/xiaochengxu/product'));
+app.use('/cart', require('./routers/xiaochengxu/cart'));
 
 
 app.listen(3002,()=>{
