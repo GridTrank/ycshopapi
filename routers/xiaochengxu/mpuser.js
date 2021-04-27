@@ -1,22 +1,15 @@
 const pool = require('../../pool.js')
 const router  = require("../index");
 
-var {PRIVITE_KEY,EXPIRESD} = require("../../utils/store")
-var WXBizDataCrypt = require('../../utils/WXBizDataCrypt')
-
-const jwt = require("jsonwebtoken");
-const md5 = require("md5");
-const bodyParser=require('body-parser')
 const sd = require('silly-datetime');
-
-
+const auth=require('../../utils/auth')
 
 router.post("/getOpenid", async (req, res) => {
     let code = req.body.code; 
     let encryptedData = req.body.encryptedData;
     let iv = req.body.iv;
     let appid = req.body.appid; 
-    let secret = req.body.secret; 
+    let secret ='8afa34be9ae90b3331196a4b6b40c032'; 
     let grant_type = "authorization_code"; 
     let url ="https://api.weixin.qq.com/sns/jscode2session?grant_type=" + grant_type +"&appid=" +appid +"&secret=" +secret +"&js_code=" +code;
     let openData=await getOpenid(url)
@@ -24,19 +17,17 @@ router.post("/getOpenid", async (req, res) => {
       code:200,
       data:openData
     })
-    
 });
 
 router.post('/shopLogin',(req,res)=>{
   let body=req.body
   let insertData={
     open_id:body.openId,
-    // avatarUrl:body.userInfo.avatarUrl,
-    // nickName:body.userInfo.nickName,
+    avatarUrl:body.userInfo.avatarUrl,
+    nickName:body.userInfo.nickName,
   }
   var selectSql='select * from sys_admin_members where open_id=? '
   var insertSql='insert into sys_admin_members set ? '
-
   pool.query(selectSql,[body.openId],(err,response)=>{
       if(err)throw err
       let data={}
@@ -53,10 +44,20 @@ router.post('/shopLogin',(req,res)=>{
               open_id:body.openId,
               userInfo:rs[0]
             }
-            res.send({
-              code:200,
-              data:data
-            })
+            let Token = auth.makeToken(rs[0].mid); 
+            if(rs[0].mobile){
+              res.send({
+                code:200,
+                data:data,
+                token:Token
+              })
+            }else{
+              res.send({
+                code:100005,
+                data:data,
+                token:Token
+              })
+            }
           })
         })
       }else{
@@ -66,10 +67,21 @@ router.post('/shopLogin',(req,res)=>{
           open_id:body.openId,
           userInfo:response[0]
         }
-        res.send({
-          code:200,
-          data:data
-        })
+        let Token = auth.makeToken(response[0].mid);
+        if(response[0].mobile){
+          res.send({
+            code:200,
+            data:data,
+            token:Token
+          })
+        }else{
+          res.send({
+            code:100005,
+            data:data,
+            token:Token
+          })
+        }
+        
       }
 
   })
@@ -97,24 +109,8 @@ router.post('/shopRegister',(req,res)=>{
       })
     })
   })
-  
-
 })
 
-
-router.post('/getToken',(req,res)=>{
-  let sign=req.body.sign
-  let token=jwt.sign({sign},PRIVITE_KEY,{expiresIn:EXPIRESD}) 
-  // let token=md5( jwt.sign({sign},PRIVITE_KEY,{expiresIn:EXPIRESD}) ) 
-  res.send({
-    code:200,
-    message:'success',
-    data:{
-      token
-    }
-  })
-    
-})
 
 
 
@@ -122,11 +118,11 @@ function getOpenid(url){
   return new Promise((resolve,reject)=>{
     let https = require("https");
     let openid, sessionKey;
-
     https.get(url, (res1) => {
       res1.on("data", (d) => {
           openid = JSON.parse(d).openid; //得到openid
           sessionKey = JSON.parse(d).session_key; //得到session_key
+          
           let data = {
             openid: openid,
             sessionKey: sessionKey,

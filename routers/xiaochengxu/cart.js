@@ -5,6 +5,7 @@ const sd = require('silly-datetime');
 // 添加购物车
 router.post('/addCart',(req,res)=>{
     delete req.body.sign
+    req.body.is_choice=1
     var selectSql='select * from sys_admin_cart where pid = ? and mid =?'
     var insertSql='insert into sys_admin_cart set ?'
     var updateSql='update sys_admin_cart set ? where pid =? and mid =?'
@@ -20,6 +21,7 @@ router.post('/addCart',(req,res)=>{
                 })
             })
         }else{
+            req.body.product_num=Number(req.body.product_num) + Number(selectResult[0].product_num) 
             pool.query(updateSql,[req.body,req.body.pid,req.body.mid],(err,updateResult)=>{
                 if(err) throw err
                 res.send({
@@ -46,8 +48,7 @@ router.post('/list',async (req,res)=>{
                     data:result
                 })
             }
-        })
-        
+        }) 
     })
 })
 // 选中
@@ -62,6 +63,19 @@ router.post('/choice',(req,res)=>{
     })
 })  
 
+// 修改数量
+router.post('/update',(req,res)=>{
+    var sql='update sys_admin_cart set product_num=? where cid=?'
+    pool.query(sql,[req.body.num,req.body.cid],(err,result)=>{
+        if(err) throw err
+        res.send({
+            code:200,
+            message:'success'
+        })
+    })
+})
+
+
 
 
 function getList(id){
@@ -74,6 +88,8 @@ function getList(id){
         })
     })
 }
+
+
 
 
 

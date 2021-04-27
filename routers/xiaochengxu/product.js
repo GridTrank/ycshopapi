@@ -18,7 +18,6 @@ router.post('/index',(req,res)=>{
 // 查询商品
 router.post('/detail',(req,res)=>{
     var sql=`select * from sys_admin_product where pid = (${req.body.pid})`
-    console.log(sql)
     pool.query(sql,(err,response)=>{
         if(err)throw err
         let data=response[0]
@@ -30,13 +29,13 @@ router.post('/detail',(req,res)=>{
         if(data.banners){
             data.banners=data.banners.split(',')
             data.banners.forEach((el,i,arr)=>{
-                arr[i]='http://47.112.113.38:3000/uploads/'+ el
+                arr[i]='http://120.77.246.130:3000/uploads/'+ el
             })
         }
         if(data.detail_imgs){
             data.detail_imgs=data.detail_imgs.split(',')
             data.detail_imgs.forEach((el,i,arr)=>{
-                arr[i]='http://47.112.113.38:3000/uploads/'+ el
+                arr[i]='http://120.77.246.130:3000/uploads/'+ el
             })
         }
 
